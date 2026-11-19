@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="mg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d6e8a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Fandrik'i Mirindra</title>
+</head>
+<body>
+  <canvas id="gl"></canvas>
+
+  <div id="ui">
+    <!-- calque de flou « profondeur de champ » -->
+    <div id="dof"></div>
+    <div id="dof2"></div>
+
+    <!-- ================= MENU PRINCIPAL ================= -->
+    <section id="screen-menu" class="screen">
+      <div class="menu-left">
+        <div class="logo">
+          <span class="logo-small" data-i="logo.small"></span>
+          <h1><span>FANDRIK'I</span><span class="devil">MIRINDRA</span></h1>
+          <span class="logo-tag" data-i="logo.tag"></span>
+        </div>
+        <button class="btn btn-play" id="btn-play"><span class="ico"><i data-ic="play"></i></span><span><b id="play-label"></b><small id="play-sub"></small></span></button>
+        <div class="row">
+          <button class="btn btn-sec" id="btn-levels"><i data-ic="map"></i><span data-i="menu.levels"></span></button>
+          <button class="btn btn-sec" id="btn-chars"><i data-ic="paw"></i><span data-i="menu.animals"></span></button>
+          <button class="btn btn-sec" id="btn-shop"><i data-ic="bag"></i><span data-i="menu.shop"></span></button>
+          <button class="btn btn-sec" id="btn-settings"><i data-ic="gear"></i><span data-i="menu.settings"></span></button>
+        </div>
+      </div>
+      <div class="chips" id="menu-chips"></div>
+    </section>
+
+    <!-- ================= PERSONNAGES ================= -->
+    <section id="screen-chars" class="screen">
+      <header class="topbar">
+        <button class="btn btn-back" data-back><i data-ic="back"></i></button>
+        <h2 data-i="chars.title"></h2>
+        <div class="chip" id="chars-fruits"></div>
+      </header>
+      <div class="chars-panel glass">
+        <div class="char-title"><h3 id="ch-name"></h3><span id="ch-real"></span></div>
+        <div class="ability" id="ch-ability"></div>
+        <p id="ch-desc"></p>
+        <div class="stat"><label data-i="stat.speed"></label><div class="bar"><i id="bar-speed"></i></div></div>
+        <div class="stat"><label data-i="stat.jump"></label><div class="bar"><i id="bar-jump"></i></div></div>
+        <button class="btn btn-gold" id="ch-action"></button>
+        <button class="btn btn-sec btn-wide" id="ch-shop"><i data-ic="bag"></i><span data-i="acc"></span></button>
+      </div>
+      <button class="arrow arrow-l" id="ch-prev"><i data-ic="left"></i></button>
+      <button class="arrow arrow-r" id="ch-next"><i data-ic="right"></i></button>
+      <div class="anim-btns" data-for="chars">
+        <button class="abtn" data-a="run"><i data-ic="right"></i></button>
+        <button class="abtn" data-a="jump"><i data-ic="jump"></i></button>
+        <button class="abtn" data-a="spin"><i data-ic="retry"></i></button>
+      </div>
+      <div class="strip" id="ch-strip"></div>
+    </section>
+
+    <!-- ================= BOUTIQUE D'ACCESSOIRES ================= -->
+    <section id="screen-shop" class="screen">
+      <header class="topbar">
+        <button class="btn btn-back" data-back><i data-ic="back"></i></button>
+        <h2><span data-i="shop.title"></span> · <span id="shop-char"></span></h2>
+        <div class="chip" id="shop-fruits"></div>
+      </header>
+      <div class="chars-panel glass shop-panel">
+        <nav class="shop-cats" id="shop-cats"></nav>
+        <div class="shop-items" id="shop-items"></div>
+        <button class="btn btn-gold" id="shop-action"></button>
+      </div>
+      <div class="anim-btns" data-for="shop">
+        <button class="abtn" data-a="run"><i data-ic="right"></i></button>
+        <button class="abtn" data-a="jump"><i data-ic="jump"></i></button>
+        <button class="abtn" data-a="spin"><i data-ic="retry"></i></button>
+      </div>
+    </section>
+
+    <!-- ================= PROFIL ================= -->
+    <section id="screen-profile" class="screen screen-solid">
+      <header class="topbar">
+        <button class="btn btn-back" data-back><i data-ic="back"></i></button>
+        <h2 data-i="pf.title"></h2>
+        <div class="chip" id="profile-score"></div>
+      </header>
+      <div class="profile-wrap">
+        <div class="glass profile-card">
+          <div class="pf-head">
+            <div class="pf-avatar-box">
+              <img id="pf-avatar" class="pf-avatar" alt="" />
+              <button class="pf-cam" id="pf-photo" type="button"><i data-ic="camera"></i></button>
+            </div>
+            <label class="field"><span><i data-ic="user"></i><span data-i="pf.name"></span></span>
+              <input id="pf-name" type="text" maxlength="16" autocomplete="off" autocapitalize="words" spellcheck="false" data-ip="pf.placeholder" />
+            </label>
+            <button class="btn btn-gold" id="pf-save" data-i="pf.save"></button>
+          </div>
+          <div class="pf-sub"><button class="link" id="pf-photo-remove" type="button" data-i="pf.photoRemove"></button></div>
+          <div class="pf-msg" id="pf-msg"></div>
+          <h3 data-i="pf.presets"></h3>
+          <div class="presets" id="pf-presets"></div>
+          <input id="pf-photo-file" type="file" accept="image/*" hidden />
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= NIVEAUX ================= -->
+    <section id="screen-levels" class="screen screen-solid">
+      <header class="topbar">
+        <button class="btn btn-back" data-back><i data-ic="back"></i></button>
+        <h2 data-i="menu.levels"></h2>
+        <div class="chip" id="levels-score"></div>
+      </header>
+      <nav class="tabs" id="lv-tabs"></nav>
+      <div class="levels-grid" id="lv-grid"></div>
+    </section>
+
+    <!-- ================= RÉGLAGES ================= -->
+    <section id="screen-settings" class="screen screen-solid">
+      <header class="topbar">
+        <button class="btn btn-back" data-back><i data-ic="back"></i></button>
+        <h2 data-i="set.title"></h2>
+        <div></div>
+      </header>
+      <div class="settings glass">
+        <div class="seg-row"><span class="lbl"><i data-ic="globe"></i><span data-i="set.lang"></span></span>
+          <div class="seg" id="set-lang"><button data-lg="mg">Malagasy</button><button data-lg="fr">Français</button><button data-lg="en">English</button></div>
+        </div>
+        <label class="switch"><span class="lbl"><i data-ic="sound"></i><span data-i="set.sound"></span></span><input type="checkbox" id="set-sound" /><i class="tg"></i></label>
+        <label class="switch"><span class="lbl"><i data-ic="music"></i><span data-i="set.music"></span></span><input type="checkbox" id="set-music" /><i class="tg"></i></label>
+        <label class="switch"><span class="lbl"><i data-ic="vibrate"></i><span data-i="set.vibrate"></span></span><input type="checkbox" id="set-vibrate" /><i class="tg"></i></label>
+        <div class="vols">
+          <label class="vol"><span data-i="set.volSfx"></span><input type="range" id="vol-sfx" min="0" max="100" step="5" /><b id="vol-sfx-n">80</b></label>
+          <label class="vol"><span data-i="set.volMusic"></span><input type="range" id="vol-music" min="0" max="100" step="5" /><b id="vol-music-n">50</b></label>
+          <label class="vol"><span data-i="set.volVoice"></span><input type="range" id="vol-voice" min="0" max="100" step="5" /><b id="vol-voice-n">90</b></label>
+        </div>
+        <div class="seg-row"><span class="lbl"><i data-ic="quality"></i><span data-i="set.quality"></span></span>
+          <div class="seg" id="set-quality"><button data-q="low" data-i="set.q.low"></button><button data-q="auto" data-i="set.q.auto"></button><button data-q="high" data-i="set.q.high"></button></div>
+        </div>
+        <button class="btn btn-danger" id="btn-reset" data-i="set.reset"></button>
+        <p class="hint" data-i="set.hint"></p>
+      </div>
+    </section>
+
+    <!-- ================= JEU (HUD) ================= -->
+    <section id="hud" class="hidden">
+      <div class="hud-top">
+        <button class="hud-btn" id="btn-pause"><i data-ic="pause"></i></button>
+        <div class="hud-title"><b id="hud-level"></b><small id="hud-name"></small></div>
+        <div class="hud-time" id="hud-time">0:00.0</div>
+        <div class="hud-stats"><span id="hud-fruits"></span><span id="hud-deaths"></span></div>
+      </div>
+      <div class="pad pad-left">
+        <button class="pbtn" id="pb-left"><i data-ic="left"></i></button>
+        <button class="pbtn" id="pb-right"><i data-ic="right"></i></button>
+      </div>
+      <div class="pad pad-right">
+        <button class="pbtn pbtn-jump" id="pb-jump"><i data-ic="jump"></i></button>
+      </div>
+      <div id="banner" class="banner"></div>
+      <div id="taunt" class="taunt"></div>
+    </section>
+
+    <!-- ================= PAUSE ================= -->
+    <section id="screen-pause" class="screen screen-dim">
+      <div class="modal glass">
+        <h2 data-i="pause.title"></h2>
+        <button class="btn btn-play" id="pa-resume"><span class="ico"><i data-ic="play"></i></span><b data-i="pause.resume"></b></button>
+        <div class="row">
+          <button class="btn btn-sec" id="pa-retry"><i data-ic="retry"></i><span data-i="pause.retry"></span></button>
+          <button class="btn btn-sec" id="pa-menu"><i data-ic="home"></i><span data-i="pause.home"></span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VICTOIRE ================= -->
+    <section id="screen-win" class="screen screen-dim">
+      <div class="modal glass win">
+        <div class="win-top"><h2 id="win-title"></h2></div>
+        <div class="stars" id="win-stars"><i data-ic="star"></i><i data-ic="star"></i><i data-ic="star"></i></div>
+        <div class="win-grid">
+          <div><small data-i="win.time"></small><b id="win-time">0:00</b></div>
+          <div><small data-i="win.deaths"></small><b id="win-deaths">0</b></div>
+          <div><small data-i="win.fruits"></small><b id="win-fruits">0/0</b></div>
+          <div class="win-score"><small data-i="win.score"></small><b id="win-score">0</b></div>
+        </div>
+        <div class="win-note" id="win-note"></div>
+        <div class="row">
+          <button class="btn btn-sec" id="wi-retry"><i data-ic="retry"></i><span data-i="win.retry"></span></button>
+          <button class="btn btn-sec" id="wi-menu"><i data-ic="map"></i><span data-i="win.levels"></span></button>
+          <button class="btn btn-gold" id="wi-next"><span data-i="win.next"></span><i data-ic="right"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PETITE FENÊTRE DE CONFIRMATION ================= -->
+    <section id="screen-confirm" class="screen screen-dim">
+      <div class="modal glass confirm">
+        <div class="cf-ico"><i data-ic="warn"></i></div>
+        <h2 id="cf-title"></h2>
+        <p id="cf-body"></p>
+        <div class="row">
+          <button class="btn btn-sec" id="cf-no"></button>
+          <button class="btn btn-danger" id="cf-yes"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PAGE D'OUVERTURE (affiche animée + barre de progression) ================= -->
+    <section id="splash" class="screen splash">
+      <!-- repli si l'illustration est absente : le titre animé en HTML -->
+      <div class="logo sp-logo">
+        <span class="logo-small" data-i="logo.small"></span>
+        <h1><span>FANDRIK'I</span><span class="devil">MIRINDRA</span></h1>
+      </div>
+      <div class="sp-box">
+        <div class="sp-panel">
+          <div class="sp-bar"><div class="sp-fill" id="sp-fill"></div><span class="sp-pct" id="sp-pct">0%</span></div>
+          <div class="sp-hint" id="sp-hint" data-i="loading"></div>
+        </div>
+        <button class="btn btn-play sp-start" id="sp-start" type="button"><span class="ico"><i data-ic="play"></i></span><b data-i="splash.start"></b></button>
+      </div>
+    </section>
+
+    <div id="rotate"><div>↻</div><p data-i="rotate"></p></div>
+    <div id="loading"><div class="spin"></div><p data-i="loading"></p></div>
+    <!-- vignettage noir + étalonnage chaud sur tout l'écran -->
+    <div id="grade"></div>
+    <div id="vignette"></div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

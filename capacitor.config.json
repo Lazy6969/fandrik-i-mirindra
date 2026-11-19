@@ -1,0 +1,10 @@
+{
+  "appId": "mg.mirindra.game",
+  "appName": "Fandrik'i Mirindra",
+  "webDir": "dist",
+  "backgroundColor": "#0b2418",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#0b2418"
+  }
+}
