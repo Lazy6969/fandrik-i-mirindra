@@ -656,3 +656,9 @@ body[data-view="menu"] #dof {
   -webkit-mask-image: radial-gradient(ellipse 17% 75% at var(--mx, 73%) 58%, transparent 80%, #000 100%);
   mask-image: radial-gradient(ellipse 17% 75% at var(--mx, 73%) 58%, transparent 80%, #000 100%); }
 #dof2 { display: none !important; }
+
+/* ===== mode léger (téléphones) : plus aucun flou d'arrière-plan sur le fond 3D animé, fonds pleins à la place ===== */
+body.lowfx *, body.lowfx *::before, body.lowfx *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body.lowfx .glass { background: linear-gradient(180deg, rgba(110,56,26,.95), rgba(66,30,14,.96)); }
+body.lowfx .chip, body.lowfx .hud-time, body.lowfx .hud-stats span, body.lowfx .hud-btn { background-color: rgba(58,28,12,.9); }
+body.lowfx #gl.blurred { filter: brightness(.62); }

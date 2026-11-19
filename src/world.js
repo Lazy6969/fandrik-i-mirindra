@@ -212,7 +212,7 @@ export function buildWorld(def, L, worldId, quality = 'high') {
   // lumières
   const hemi = new THREE.HemisphereLight(th.hemi[0], th.hemi[1], th.hemi[2]); scene.add(hemi);
   const sun = new THREE.DirectionalLight(th.sun[0], th.sun[1]);
-  sun.castShadow = quality !== 'low';
+  sun.castShadow = quality === 'high';
   const smap = quality === 'high' ? 1024 : 512; sun.shadow.mapSize.set(smap, smap);
   const sc = sun.shadow.camera; sc.left = -16; sc.right = 16; sc.top = 12; sc.bottom = -12; sc.near = 1; sc.far = 70;
   sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03;
@@ -266,7 +266,7 @@ export function buildWorld(def, L, worldId, quality = 'high') {
   }
   const clouds = buildClouds(R, Math.ceil(span / (quality === 'low' ? 45 : 28)), -20, span + 20, th.cloud); clouds.userData.drift = 0.35; deco.add(clouds);
   // herbe dense au pied des arbres et sur les rives, oiseaux, soleil rayonnant
-  const cover = buildGroundCover(worldId, R, spots, L.cols, quality === 'low' ? 40 : quality === 'mid' ? 70 : 110, quality === 'low' ? 4 : quality === 'mid' ? 7 : 11); scene.add(cover);
+  const cover = buildGroundCover(worldId, R, spots, L.cols, quality === 'low' ? 28 : quality === 'mid' ? 50 : 110, quality === 'low' ? 3 : quality === 'mid' ? 5 : 11); scene.add(cover);
   // fond emblématique lié au titre du niveau (ex. Rova Manjakamiadana pour Antananarivo)
   const landmark = def.landmark ? buildLandmark(def.landmark, R, 0.5) : null;
   if (landmark) { landmark.position.set(L.cols / 2, -1.5, -48); scene.add(landmark); }
@@ -274,7 +274,7 @@ export function buildWorld(def, L, worldId, quality = 'high') {
   const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex('255,214,150'), transparent: true, opacity: 0.85, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })); sunGlow.scale.set(85, 85, 1); scene.add(sunGlow);
   // herbe animée sur le dessus des blocs
   const grassCells = exByV.flat().filter(([c, y]) => !L.ents.some((e) => e.kind === 'spike' && Math.floor(e.x) === c && e.y === y + 1));
-  const grassPer = quality === 'low' ? 24 : quality === 'mid' ? 48 : 90;
+  const grassPer = quality === 'low' ? 14 : quality === 'mid' ? 32 : 90;
   const grass = buildGrass(grassCells, worldId, R, DEPTH, grassPer); scene.add(grass.mesh);
   // particules ambiantes (pollen / poussière / lucioles)
   const N = 90, pos = new Float32Array(N * 3), vel = [];
@@ -512,7 +512,7 @@ export function buildStage(themeKey = 'forest', quality = 'high') {
   scene.background = gradientTex(th.sky);
   scene.fog = new THREE.Fog(th.fog, 20, 90);
   scene.add(new THREE.HemisphereLight(th.hemi[0], th.hemi[1], th.hemi[2] * 1.1));
-  const sun = new THREE.DirectionalLight(th.sun[0], th.sun[1]); sun.position.set(-6, 10, 8); sun.castShadow = quality !== 'low';
+  const sun = new THREE.DirectionalLight(th.sun[0], th.sun[1]); sun.position.set(-6, 10, 8); sun.castShadow = quality === 'high';
   sun.shadow.mapSize.set(1024, 1024); const c = sun.shadow.camera; c.left = -14; c.right = 14; c.top = 14; c.bottom = -14; c.near = 1; c.far = 50;   // cadre d'ombre assez grand pour tout l'animal (sinon des zones claires à bords droits apparaissent)
   sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.04;
   scene.add(sun, sun.target);
@@ -522,7 +522,7 @@ export function buildStage(themeKey = 'forest', quality = 'high') {
   const base = new THREE.Group(); base.position.y = -0.3; scene.add(base);          // socle : groupe (la forme change selon le personnage)
   const shape0 = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.1, 0.6, 28), mats.exposed); shape0.receiveShadow = true; shape0.castShadow = true; base.add(shape0);
   // beaucoup d'herbe fine autour du socle : il disparaît presque entièrement (l'herbe suit le socle)
-  base.add(buildRing(th.kind, R, [800, 1600, 2800][q], 1.55, 2.7, -0.3, 0.9, 2.1));
+  base.add(buildRing(th.kind, R, [500, 1000, 2800][q], 1.55, 2.7, -0.3, 0.9, 2.1));
   const wcv = document.createElement('canvas'); wcv.width = wcv.height = 128; const wx = wcv.getContext('2d'); wx.fillStyle = '#19c3d8'; wx.fillRect(0, 0, 128, 128);
   for (let i = 0; i < 26; i++) { wx.strokeStyle = i % 2 ? 'rgba(255,255,255,.6)' : 'rgba(10,120,170,.35)'; wx.lineWidth = 2; wx.beginPath(); wx.ellipse(((i * 53) % 128), ((i * 37) % 128), 10 + (i % 5) * 3, 3, 0, 0, 3.14); wx.stroke(); }
   const wtex = new THREE.CanvasTexture(wcv); wtex.wrapS = wtex.wrapT = THREE.RepeatWrapping; wtex.colorSpace = THREE.SRGBColorSpace; wtex.repeat.set(2, 2);
@@ -532,14 +532,14 @@ export function buildStage(themeKey = 'forest', quality = 'high') {
   ground.rotation.x = -Math.PI / 2; ground.position.y = -1.4; ground.receiveShadow = true; scene.add(ground);
   // forêt dense en plusieurs rangées
   const sp = [];
-  const n = [26, 44, 64][q];
+  const n = [20, 32, 64][q];
   for (let i = 0; i < n; i++) { const a = -Math.PI * 0.98 + (i / (n - 1)) * Math.PI * 0.96, d = 9 + R() * 34; sp.push({ x: Math.cos(a) * d * 1.6, y: -1.4, z: -Math.abs(Math.sin(a)) * d - 3 - R() * 4 }); }
   scene.add(buildTrees(th.kind, R, sp));
   scene.add(buildClouds(R, 5, -50, 50, th.cloud));
   // herbe très fine : pied des arbres + prairie qui cache le bas du sol
   scene.add(buildGroundCover(th.kind, R, sp, 0, [40, 70, 100][q], 0));
-  scene.add(buildMeadowArea(th.kind, R, -20, 20, -34, 7, [4500, 10000, 17000][q], -1.4, 0.9, 2.2));
-  scene.add(buildMeadowArea(th.kind, R, -16, 16, -2, 9.6, [2500, 7500, 13000][q], -1.4, 0.5, 1.4));   // herbe très dense tout en bas de l'écran
+  scene.add(buildMeadowArea(th.kind, R, -20, 20, -34, 7, [3000, 6500, 17000][q], -1.4, 0.9, 2.2));
+  scene.add(buildMeadowArea(th.kind, R, -16, 16, -2, 9.6, [1800, 4500, 13000][q], -1.4, 0.5, 1.4));   // herbe très dense tout en bas de l'écran
   const lm = buildLandmark('rova', R, 0.9); if (lm) { lm.position.set(-8, -1.4, -78); scene.add(lm); }
   const birds = buildBirds(R, quality === 'low' ? 3 : 7, -40, 40); scene.add(birds.group);
   for (let i = 0; i < 6; i++) { const m = mountain(R, th.mount); m.position.set(-40 + i * 16, -1, -110); scene.add(m); }

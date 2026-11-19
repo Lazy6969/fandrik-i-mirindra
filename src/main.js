@@ -34,7 +34,8 @@ Sound.setOptions({ sound: settings().sound, music: settings().music, volSfx: set
 const canvas = $('#gl');
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  const mobileGpu = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints || 0) > 1;
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobileGpu, powerPreference: 'high-performance' });   // pas d'anti-crénelage sur téléphone : gros gain de fluidité
 } catch (e) {
   $('#loading').innerHTML = '<p style="padding:24px;text-align:center">WebGL indisponible sur cet appareil.</p>';
   throw e;
@@ -42,7 +43,15 @@ try {
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.NoToneMapping;       // couleurs franches et saturées (style cartoon)
 
+let qcap = null; try { qcap = localStorage.getItem('mirindra.qcap'); } catch (e) { /* pas de stockage */ }
+/** qualité effective : le réglage du joueur, ou (en « auto ») la qualité de l'appareil abaissée si le jeu a détecté des saccades */
 function qualityLevel() {
+  const r = baseQuality();
+  if (settings().quality !== 'auto' || !qcap) return r;
+  if (qcap === 'low') return 'low';
+  return qcap === 'mid' && r === 'high' ? 'mid' : r;
+}
+function baseQuality() {
   const q = settings().quality;
   if (q === 'low') return 'low';
   if (q === 'high') return 'high';
@@ -54,8 +63,8 @@ function qualityLevel() {
 function applyQuality() {
   const q = qualityLevel();
   const dpr = window.devicePixelRatio || 1;
-  renderer.setPixelRatio(q === 'low' ? 1 : Math.min(dpr, q === 'mid' ? 1.25 : 1.75));   // les écrans 3x ruineraient la fluidité
-  renderer.shadowMap.enabled = q !== 'low';
+  renderer.setPixelRatio(q === 'low' ? Math.min(dpr, 0.85) : Math.min(dpr, q === 'mid' ? 1 : 1.75));   // les écrans 3x ruineraient la fluidité
+  renderer.shadowMap.enabled = q === 'high';
   document.body.classList.toggle('lowfx', q !== 'high');
   renderer.shadowMap.autoUpdate = q === 'high';   // sinon : ombres recalculées une image sur deux (voir la boucle)
   G.quality = q; G.dirty = true;
@@ -568,7 +577,7 @@ function startLevel(id) {
   G.pv = buildAnimal(ch.id, Save.skinOf(ch.id));
   G.world.scene.add(G.pv.group);
   G.ch = ch;
-  G.fx = null; lastInput = G.t; G.hangW = 0; G.hangPrev = false; G.liana = null;
+  G.fx = null; govFrom = G.t + 4; lastInput = G.t; G.hangW = 0; G.hangPrev = false; G.liana = null;
   if (HANG[ch.id]) { G.liana = makeLiana(); G.liana.visible = false; G.world.scene.add(G.liana); }
   { const P = buildPedestal(ch.id); if (P.fx !== 'water') { G.fx = makeFx(P.fx, 0.55, P.disc ? tex(P.disc.tex) : null); G.world.scene.add(G.fx.group); } }
   G.deaths = 0; G.levelTime = 0; G.acc = 0; G.paused = false; G.mode = 'play'; G.winTimer = 0; G.deadTimer = 0; G.shake = 0; G.stepAcc = 0;
@@ -875,10 +884,23 @@ function updateMenu(dt) {
   cam.position.set((Math.random() - 0.5) * shk, 2.2 + (Math.random() - 0.5) * shk, 10.2 * Math.max(1, 1.9 / asp));
   cam.lookAt(0, 1.45, 0);
 }
+// ---- réglage automatique : si le jeu saccade (moins de ~38 images/s) pendant 2 s, il baisse tout seul la qualité (et s'en souvient)
+let govN = 0, govSlow = 0, govFrom = 0;
+function downgradeQuality() {
+  const cur = G.quality; if (cur === 'low') return;
+  qcap = cur === 'high' ? 'mid' : 'low';
+  try { localStorage.setItem('mirindra.qcap', qcap); } catch (e) { /* pas de stockage */ }
+  applyQuality();
+  for (const sc of [stage && stage.scene, G.world && G.world.scene]) if (sc) sc.traverse((o) => { if (o.material) [].concat(o.material).forEach((m) => { m.needsUpdate = true; }); });   // les ombres changent : on recompile les matériaux
+}
 function frame(now) {
   requestAnimationFrame(frame);
   if (G.quality === 'low' && now - last < 30) return;                          // 30 images/s max en mode éco (batterie, chauffe)
-  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;   // jamais négatif (1re image)
+  const raw = now - last;
+  const dt = Math.max(0, Math.min(0.05, raw / 1000)); last = now;   // jamais négatif (1re image)
+  if ((G.mode === 'play' && !G.paused) || (G.mode === 'menu' && VIEWS_3D.includes(G.screen))) {
+    if (G.t > govFrom && raw > 0 && !document.hidden) { govN++; if (raw > 26 && raw < 400) govSlow++; if (govN >= 120) { if (govSlow > 54 && G.quality !== 'low') downgradeQuality(); govN = govSlow = 0; } }
+  } else { govN = govSlow = 0; govFrom = G.t + 3; }
   G.t += dt; G.frame++;
   if (G.mode === 'splash' && splash) {                                    // page d'ouverture : on charge un peu, on anime, on dessine
     splash.pump(); splash.update(G.t, dt); renderer.render(splash.scene, splash.camera);

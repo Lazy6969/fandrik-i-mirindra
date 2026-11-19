@@ -1,10 +1,40 @@
 // Supports des personnages : chacun a sa forme (racines, branche, rocher, muret, souche, coffre, panier, tombe…),
 // son sol, ses objets décoratifs et ses effets. Le haut du support est toujours à y = 0.3 (repère du socle).
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { surfaceTexture } from './surface.js';
 
 function rnd(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const mt = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9, flatShading: true, ...o });
+const matCache = new Map();
+const mt = (c, o = {}) => {                                                      // matériaux partagés : même couleur = même matériau (permet de fusionner les objets)
+  const key = c + JSON.stringify(o, (k, v) => (v && v.isTexture ? v.uuid : v));
+  if (!matCache.has(key)) matCache.set(key, new THREE.MeshStandardMaterial({ color: c, roughness: 0.9, flatShading: true, ...o }));
+  return matCache.get(key);
+};
+/** fusionne tous les objets immobiles qui partagent le même matériau en un seul : des dizaines d'appels de dessin en moins */
+function mergeStatic(root) {
+  root.updateMatrixWorld(true);
+  const groups = new Map();
+  root.traverse((o) => {
+    if (!o.isMesh || Array.isArray(o.material) || o.userData.flame !== undefined || o.userData.waterMesh || o.userData.noMerge) return;
+    if (!groups.has(o.material)) groups.set(o.material, []);
+    groups.get(o.material).push(o);
+  });
+  for (const [m, list] of groups) {
+    if (list.length < 2) continue;
+    const geos = list.map((o) => {
+      const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      g.applyMatrix4(o.matrixWorld);
+      for (const n of Object.keys(g.attributes)) if (n !== 'position' && n !== 'normal' && n !== 'uv') g.deleteAttribute(n);
+      return g;
+    });
+    let merged = null; try { merged = mergeGeometries(geos, false); } catch (e) { merged = null; }
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(merged, m); mesh.castShadow = list.some((o) => o.castShadow); mesh.receiveShadow = true;
+    list.forEach((o) => o.parent && o.parent.remove(o));
+    root.add(mesh);
+  }
+}
 const TOP = 0.3;
 
 // ------------------------------------------------------------------ textures supplémentaires
@@ -178,5 +208,6 @@ export function buildPedestal(id) {
     default: S(earthShape(0x7a5a3a)); disc = { r: 1.7, tex: 'moss' }; break;
   }
   shape.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  mergeStatic(shape); mergeStatic(props);
   return { shape, props, disc, fx };
 }
