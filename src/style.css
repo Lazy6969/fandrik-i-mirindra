@@ -603,3 +603,56 @@ body.lowfx #dof2 { display: none; }
 #btn-play > span:last-child { flex: 1; display: block; text-align: center; }
 #btn-play b { font-size: 1em; letter-spacing: .02em; }
 #btn-play small { font-size: .56em; opacity: .85; margin-top: .25em; }
+
+/* ===== écran « Histoire » du personnage ===== */
+#screen-story { padding-top: calc(var(--sa-t) + 1.2vh); }
+.story-wrap { --kc: #4f9a36; --kc2: #7ad04a; position: absolute; left: 2.4vh; right: 2.4vh; top: 11vh; bottom: calc(var(--sa-b) + 2vh); display: grid; grid-template-columns: minmax(0, 38%) minmax(0, 1fr); gap: 2.4vh; }
+.story-wrap[data-k="domestic"] { --kc: #d9822b; --kc2: #ffb347; }
+.story-wrap[data-k="legend"]   { --kc: #8a4fd0; --kc2: #c58bff; }
+.story-wrap[data-k="spirit"]   { --kc: #4a5fa8; --kc2: #8fa6f0; }
+.story-wrap[data-k="hero"]     { --kc: #d9a52a; --kc2: #ffe066; }
+.story-wrap[data-k="giant"]    { --kc: #9a5a3a; --kc2: #e0956a; }
+.story-art { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.4vh; min-height: 0; }
+.portrait { position: relative; width: min(100%, 52vh); aspect-ratio: 1; display: grid; place-items: center; }
+.portrait .halo { position: absolute; inset: 4%; border-radius: 50%; background: radial-gradient(circle at 50% 42%, #fff6c8 0%, var(--kc2) 46%, var(--kc) 100%); border: .7vh solid #fff3c4; box-shadow: 0 0 0 .7vh var(--kc), 0 1.6vh 0 .7vh rgba(58,26,8,.55), 0 2.4vh 3.4vh rgba(0,0,0,.35), inset 0 -2vh 3vh rgba(0,0,0,.18); }
+.portrait img { position: relative; width: 112%; height: 112%; object-fit: contain; filter: drop-shadow(0 1.4vh 1.2vh rgba(40,20,5,.45)); animation: stBob 3.2s ease-in-out infinite; }
+@keyframes stBob { 0%,100% { transform: translateY(0) rotate(-.6deg); } 50% { transform: translateY(-1.2%) rotate(.6deg); } }
+.thumbs { display: flex; gap: 1.6vh; }
+.thumbs img { width: 11vh; height: 11vh; object-fit: contain; border-radius: 1.8vh; background: radial-gradient(circle at 50% 40%, #fff3c4, var(--kc2)); border: .5vh solid #fff3c4; box-shadow: 0 0 0 .45vh var(--kc), 0 .8vh 0 .45vh rgba(58,26,8,.5), 0 1.4vh 2vh rgba(0,0,0,.3); }
+.thumbs img:nth-child(1) { transform: rotate(-4deg); } .thumbs img:nth-child(2) { transform: rotate(4deg); }
+.kcat { position: relative; padding: .9vh 2.8vh; border-radius: 99px; font-family: 'Lilita One', system-ui, sans-serif; font-size: clamp(12px, 2.8vh, 20px); color: #fff; text-shadow: 0 .2vh 0 rgba(0,0,0,.4); background: linear-gradient(180deg, var(--kc2), var(--kc)); border: .45vh solid #3a1a08; box-shadow: 0 .6vh 0 rgba(58,26,8,.6), inset 0 .35vh 0 rgba(255,255,255,.45); letter-spacing: .02em; }
+.story-card { position: relative; display: flex; flex-direction: column; min-height: 0; padding: 2vh 2.4vh 1.6vh; border-radius: 3vh; background: linear-gradient(180deg, #fdf0cf 0%, #f3dca6 100%); border: .7vh solid #7a4a22; box-shadow: 0 0 0 .5vh var(--kc), 0 1.2vh 0 .5vh rgba(58,26,8,.6), 0 2.4vh 3.6vh rgba(0,0,0,.4), inset 0 .5vh 0 rgba(255,255,255,.7); color: #4a2a10; }
+.story-card::before { content: ''; position: absolute; left: 3vh; right: 3vh; top: -1.6vh; height: 2.6vh; border-radius: 1.4vh 1.4vh 0 0; background: linear-gradient(180deg, var(--kc2), var(--kc)); border: .45vh solid #3a1a08; border-bottom: 0; }
+.story-card.flip { animation: stFlip .45s cubic-bezier(.3,1.5,.5,1); }
+@keyframes stFlip { from { transform: perspective(900px) rotateY(-14deg) scale(.96); opacity: .4; } to { transform: none; opacity: 1; } }
+.story-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 1.4vh; margin-bottom: 1vh; }
+.story-head h3 { margin: 0; font-family: 'Lilita One', system-ui, sans-serif; font-weight: 400; font-size: clamp(22px, 6vh, 44px); line-height: 1; color: #fff; -webkit-text-stroke: .5vh #3a1a08; paint-order: stroke fill; text-shadow: 0 .5vh 0 var(--kc); }
+.story-head span { font-weight: 700; font-size: clamp(11px, 2.5vh, 17px); color: #8a5a2a; }
+.story-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 1.4vh; padding-right: .8vh; }
+.sec { position: relative; padding: 1.3vh 1.8vh 1.4vh; border-radius: 2vh; background: rgba(255,255,255,.5); border: .35vh solid rgba(122,74,34,.35); }
+.sec h4 { display: flex; align-items: center; gap: .9vh; margin: 0 0 .7vh; font-family: 'Lilita One', system-ui, sans-serif; font-weight: 400; font-size: clamp(14px, 3.3vh, 22px); color: var(--kc); -webkit-text-stroke: 0; text-shadow: 0 .2vh 0 rgba(255,255,255,.7); }
+.sec h4 .ic { width: 3.6vh; height: 3.6vh; }
+.sec p { margin: 0; font-size: clamp(12px, 2.7vh, 18px); line-height: 1.38; font-weight: 600; }
+.sec.quote { background: linear-gradient(135deg, rgba(255,255,255,.7), rgba(255,236,170,.7)); border-left: 1vh solid var(--kc); }
+.sec.quote p { font-style: italic; font-size: clamp(13px, 2.95vh, 20px); }
+.sec.perk { background: linear-gradient(135deg, rgba(255,255,255,.55), rgba(255,255,255,.3)); }
+.sec.perk p { font-weight: 800; color: #5a3010; margin-bottom: .9vh; }
+.sec.perk .stat { margin-top: .5vh; } .sec.perk .stat label { color: #5a3a1a; }
+.story-nav { display: flex; justify-content: space-between; gap: 1.4vh; margin-top: 1.2vh; }
+.story-nav .btn { flex: 0 0 auto; min-width: 11vh; padding: .9vh 2.4vh; }
+.story-nav .btn .ic { width: 3.4vh; height: 3.4vh; }
+#ch-story { margin-top: .8vh; }
+.chars-panel #ch-shop, .chars-panel #ch-story { width: calc(50% - .5vh); margin-top: 1.1vh; padding-inline: .6vh; vertical-align: top; }
+.chars-panel #ch-story { margin-left: 1vh; }
+
+/* Accessoires + Histoire : deux petits boutons côte à côte (Histoire à droite), sans débordement */
+.chars-panel .ch-row { display: flex; gap: .8vh; margin-top: 1.1vh; width: 100%; }
+.chars-panel .ch-row .btn { flex: 1 1 0; min-width: 0; width: auto; margin: 0; padding: .8vh .6vh; gap: .4vh; font-size: clamp(11px, 2.5vh, 16px); line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chars-panel .ch-row .btn .ic { width: 3vh; height: 3vh; flex: none; }
+.chars-panel #ch-shop, .chars-panel #ch-story { width: auto; margin: 0; }
+
+/* ===== flou uniforme : seul le personnage reste net (plus de bande nette dans l'herbe à côté du bouton) ===== */
+body[data-view="menu"] #dof {
+  -webkit-mask-image: radial-gradient(ellipse 17% 75% at var(--mx, 73%) 58%, transparent 80%, #000 100%);
+  mask-image: radial-gradient(ellipse 17% 75% at var(--mx, 73%) 58%, transparent 80%, #000 100%); }
+#dof2 { display: none !important; }

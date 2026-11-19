@@ -3,6 +3,8 @@ const st = 'stroke="#3a1a08" stroke-width="1.7" stroke-linejoin="round" stroke-l
 const S = (inner) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
 
 export const ICONS = {
+  book: S(`<path ${st} d="M3.5 5.2c3-1 5.700-.8 8.500.8v13.500c-2.800-1.500-5.500-1.700-8.500-.700z" fill="#f6e2b0"/><path ${st} d="M20.500 5.200c-3-1-5.700-.8-8.500.8v13.500c2.800-1.500 5.500-1.700 8.500-.700z" fill="#ead093"/><path fill="none" stroke="#a8742f" stroke-width="1" d="M6 8.500c1.500-.3 3 0 4.500.7M6 12c1.500-.3 3 0 4.500.7M18 8.500c-1.500-.3-3 0-4.500.7M18 12c-1.500-.3-3 0-4.500.7"/>`),
+  quote: S(`<path ${st} fill="#ffd23f" d="M4 8.500c0-2.200 1.500-3.500 3.500-3.500v2c-.9 0-1.500.5-1.500 1.500H8.500V13H4zM12.500 8.500c0-2.200 1.500-3.500 3.500-3.500v2c-.9 0-1.500.5-1.500 1.500H17V13h-4.500z"/>`),
   star: S(`<path ${st} fill="#ffd23f" d="M12 2.4l2.9 6 6.6.9-4.8 4.6 1.2 6.6L12 17.3l-5.9 3.2 1.2-6.6L2.5 9.3l6.6-.9z"/><path fill="#fff" opacity=".55" d="M9.5 8.6l2.2-3.6-.7 4z"/>`),
   mango: S(`<path ${st} fill="#ffa52a" d="M12 5.5c5 0 8 3.8 8 7.8S17 20.6 12 20.6 4 17.3 4 13.3s3-7.8 8-7.8z"/><path ${st} fill="#4cc04a" d="M12 5.5c0-2.3 1.9-3.8 4.2-3.8-.2 2.2-1.9 3.8-4.2 3.8z"/><path fill="#fff" opacity=".55" d="M7.6 11c.5-1.6 1.6-2.6 3.2-3-1.7.5-2.8 1.5-3.2 3z"/>`),
   trophy: S(`<path ${st} fill="#ffd23f" d="M7 3h10v6a5 5 0 01-10 0z"/><path ${st} fill="none" d="M7 5H3.5c0 3 1.2 4.6 3.7 5M17 5h3.5c0 3-1.2 4.6-3.7 5"/><path ${st} fill="#e0a21c" d="M10.5 14h3v3.5h-3z"/><path ${st} fill="#ffd23f" d="M7.5 20.5h9l-1-3h-7z"/>`),

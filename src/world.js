@@ -519,8 +519,8 @@ export function buildStage(themeKey = 'forest', quality = 'high') {
   const R = rng(5);
   const q = quality === 'low' ? 0 : quality === 'mid' ? 1 : 2;
   const mats = blockMaterials(th, themeKey);
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.1, 0.6, 28), mats.exposed);
-  base.position.y = -0.3; base.receiveShadow = true; base.castShadow = true; scene.add(base);
+  const base = new THREE.Group(); base.position.y = -0.3; scene.add(base);          // socle : groupe (la forme change selon le personnage)
+  const shape0 = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.1, 0.6, 28), mats.exposed); shape0.receiveShadow = true; shape0.castShadow = true; base.add(shape0);
   // beaucoup d'herbe fine autour du socle : il disparaît presque entièrement (l'herbe suit le socle)
   base.add(buildRing(th.kind, R, [800, 1600, 2800][q], 1.55, 2.7, -0.3, 0.9, 2.1));
   const wcv = document.createElement('canvas'); wcv.width = wcv.height = 128; const wx = wcv.getContext('2d'); wx.fillStyle = '#19c3d8'; wx.fillRect(0, 0, 128, 128);
@@ -549,5 +549,5 @@ export function buildStage(themeKey = 'forest', quality = 'high') {
   scene.add(pollen);
   const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex('255,214,150'), transparent: true, opacity: 0.8, depthWrite: false, fog: false, blending: THREE.AdditiveBlending }));
   sunGlow.scale.set(60, 60, 1); sunGlow.position.set(-22, 12, -70); scene.add(sunGlow);
-  return { scene, pollen, base, water, sun, update(t, dt) { wtex.offset.x = t * 0.05; wtex.offset.y = Math.sin(t) * 0.03; wind.value = t; birds.update(t, dt); if (lm && lm.userData.update) lm.userData.update(t); } };
+  return { scene, pollen, base, shape0, water, sun, update(t, dt) { wtex.offset.x = t * 0.05; wtex.offset.y = Math.sin(t) * 0.03; wind.value = t; birds.update(t, dt); if (lm && lm.userData.update) lm.userData.update(t); } };
 }

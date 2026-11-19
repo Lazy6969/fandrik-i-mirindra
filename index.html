@@ -48,7 +48,10 @@
         <div class="stat"><label data-i="stat.speed"></label><div class="bar"><i id="bar-speed"></i></div></div>
         <div class="stat"><label data-i="stat.jump"></label><div class="bar"><i id="bar-jump"></i></div></div>
         <button class="btn btn-gold" id="ch-action"></button>
-        <button class="btn btn-sec btn-wide" id="ch-shop"><i data-ic="bag"></i><span data-i="acc"></span></button>
+        <div class="ch-row">
+          <button class="btn btn-sec" id="ch-shop"><i data-ic="bag"></i><span data-i="acc"></span></button>
+          <button class="btn btn-sec" id="ch-story"><i data-ic="book"></i><span data-i="story.btn"></span></button>
+        </div>
       </div>
       <button class="arrow arrow-l" id="ch-prev"><i data-ic="left"></i></button>
       <button class="arrow arrow-r" id="ch-next"><i data-ic="right"></i></button>
@@ -58,6 +61,34 @@
         <button class="abtn" data-a="spin"><i data-ic="retry"></i></button>
       </div>
       <div class="strip" id="ch-strip"></div>
+    </section>
+
+    <!-- ================= HISTOIRE DU PERSONNAGE ================= -->
+    <section id="screen-story" class="screen">
+      <header class="topbar">
+        <button class="btn btn-back" id="st-back"><i data-ic="back"></i></button>
+        <h2 data-i="story.title"></h2>
+        <div class="chip" id="st-count"></div>
+      </header>
+      <div class="story-wrap" id="st-wrap">
+        <aside class="story-art">
+          <div class="portrait"><span class="halo"></span><img id="st-img1" alt=""></div>
+          <div class="thumbs"><img id="st-img2" alt=""><img id="st-img3" alt=""></div>
+          <div class="kcat" id="st-cat"></div>
+        </aside>
+        <article class="story-card">
+          <div class="story-head"><h3 id="st-name"></h3><span id="st-real"></span></div>
+          <div class="story-scroll">
+            <section class="sec"><h4><i data-ic="book"></i><span data-i="story.origin"></span></h4><p id="st-hist"></p></section>
+            <section class="sec quote"><h4><i data-ic="quote"></i><span data-i="story.player"></span></h4><p id="st-desc"></p></section>
+            <section class="sec perk"><h4><i data-ic="star"></i><span data-i="story.game"></span></h4><p id="st-perk"></p>
+              <div class="stat"><label data-i="stat.speed"></label><div class="bar"><i id="st-bar-speed"></i></div></div>
+              <div class="stat"><label data-i="stat.jump"></label><div class="bar"><i id="st-bar-jump"></i></div></div>
+            </section>
+          </div>
+          <div class="story-nav"><button class="btn btn-sec" id="st-prev"><i data-ic="left"></i></button><button class="btn btn-sec" id="st-next"><i data-ic="right"></i></button></div>
+        </article>
+      </div>
     </section>
 
     <!-- ================= BOUTIQUE D'ACCESSOIRES ================= -->

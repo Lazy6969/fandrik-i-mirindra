@@ -28,6 +28,11 @@ const D = {
   'need': ['Mila', 'Il te faut', 'You need'],
   'chosen': ['voafidy', 'choisi', 'chosen'],
   'acc': ['Haingo', 'Accessoires', 'Accessories'],
+  'story.btn': ['Tantara', 'Histoire', 'Story'],
+  'story.title': ['Tantaran’ny biby', 'Histoire du personnage', 'Character story'],
+  'story.origin': ['Tantara sy niandohana', 'Histoire & origine', 'Story & origin'],
+  'story.player': ['Ho an’ny mpilalao', 'Pour le joueur', 'For the player'],
+  'story.game': ['Ao anaty lalao', 'Dans le jeu', 'In the game'],
   // --- boutique
   'shop.title': ['Tsena', 'Boutique', 'Shop'],
   'shop.pick': ['Fidio ny zavatra', 'Choisis un objet', 'Pick an item'],

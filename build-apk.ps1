@@ -5,7 +5,10 @@ $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
 $sdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
-$env:JAVA_HOME = (Get-Command java).Source | Split-Path | Split-Path
+# JDK 17 obligatoire pour Android Gradle (un JDK plus recent, ex. 25, bloque la compilation)
+$jdk17 = Get-ChildItem (Join-Path $env:USERPROFILE 'Tools') -Directory -Filter 'jdk-17*' -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($jdk17) { $env:JAVA_HOME = $jdk17.FullName } else { $env:JAVA_HOME = (Get-Command java).Source | Split-Path | Split-Path }
+$env:Path = (Join-Path $env:JAVA_HOME 'bin') + ';' + $env:Path
 $env:ANDROID_HOME = $sdk
 $env:ANDROID_SDK_ROOT = $sdk
 $sm = Join-Path $sdk 'cmdline-tools\latest\bin\sdkmanager.bat'

@@ -58,6 +58,11 @@ void main() {
     float fl = (1.0 - sm(0.20, 0.28, p.x)) + sm(0.74, 0.82, p.x);
     q.x += fl * sm(0.70, 0.78, p.y) * sin(t * 1.7 + p.y * 9.0 + p.x * 5.0) * 0.0035 * ((p.y - 0.7) / 0.3);
     col = texture2D(map, vec2(clamp(q.x, 0.0, 1.0), 1.0 - clamp(q.y, 0.0, 1.0))).rgb;
+    // le bouton dessiné dans l'image est effacé (le vrai bouton HTML le remplace) : on recopie le chemin de terre à côté, en miroir
+    float bm = sm(0.366, 0.376, p.x) * (1.0 - sm(0.624, 0.634, p.x)) * sm(0.812, 0.824, p.y) * (1.0 - sm(0.958, 0.972, p.y));
+    float mx = abs(fract((p.x - 0.366) * 4.0) * 2.0 - 1.0);
+    vec3 fill = texture2D(map, vec2(mix(0.318, 0.362, mx), 1.0 - p.y), 2.0).rgb;
+    col = mix(col, fill, bm);
     // reflet qui balaie le titre
     float d = abs((p.x + p.y * 0.6) - (fract(t * 0.22) * 2.2 - 0.3));
     col += col * tt * (1.0 - sm(0.0, 0.05, d)) * 0.4;

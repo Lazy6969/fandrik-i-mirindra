@@ -10,8 +10,12 @@ import * as Sound from './audio.js';
 import { App } from '@capacitor/app';
 import { ic, hydrateIcons } from './icons.js';
 import { createSplash, hasSplashImage } from './splash.js';
+import { makeFx } from './surface.js';
+import { STORIES } from './stories.js';
+import { makeLiana, placeLiana, handPoint, HANG } from './idle.js';
+import { buildPedestal, tex } from './pedestal.js';
 import { buildSplashScene } from './splash-scene.js';
-import { t, setLang, getLang, applyStatic, cName, cReal, cAbility, cDesc, itemName } from './i18n.js';
+import { t, setLang, getLang, LANGS, applyStatic, cName, cReal, cAbility, cDesc, itemName } from './i18n.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
@@ -118,12 +122,30 @@ const VIEWS_3D = ['menu', 'chars', 'shop'];
 window.__preview = () => preview;
 
 const PREVIEW_SCALE = { lolo: 2.5, vazimba: 4.1, angatra: 3.3, kisoa: 3.6, trimobe: 2.4, tortue: 3.6, sorciere: 3.2, darafify: 3.4, rapeto: 2.4, ikotofetsy: 5.2, imahaka: 3.5, ibonia: 3.1, ikotobekibo: 4.4, zazavavindrano: 3.0 };   // tailles d'aperçu adaptées à chaque morphologie
+let lastInput = 0;                                                          // dernier geste du joueur (pour les animations d'attente)
+['pointerdown', 'keydown', 'touchstart'].forEach((ev) => window.addEventListener(ev, () => { lastInput = G.t; }, { capture: true, passive: true }));
+/** sol du socle + objets autour + animations sous les pieds, selon le personnage */
+function applySurface(id) {
+  const P = buildPedestal(id), mw = stage.water.material;
+  stage.shape0.visible = false;
+  if (stage.ped) stage.base.remove(stage.ped);
+  stage.ped = P.shape; stage.base.add(P.shape); stage.waterMesh = null; P.shape.traverse((o) => { if (o.userData.waterMesh) stage.waterMesh = o.userData.waterMesh; });
+  if (P.disc) {                                                              // dessus du support : sol propre au personnage
+    const tx = tex(P.disc.tex); mw.map = tx; mw.opacity = P.disc.tex === 'water' ? 0.93 : 1; mw.transparent = mw.opacity < 1; mw.needsUpdate = true;
+    stage.water.visible = true; stage.water.scale.setScalar(P.disc.r / 1.86); stage.discTex = P.disc.tex;
+  } else { stage.water.visible = false; stage.discTex = ''; }
+  stage.surfKind = P.fx;
+  if (stage.props) stage.base.remove(stage.props);
+  stage.props = P.props; stage.base.add(P.props); stage.flames = []; P.props.traverse((o) => { if (o.userData.flame !== undefined) stage.flames.push(o); });
+  if (stage.fx) stage.base.remove(stage.fx.group);
+  stage.fx = makeFx(P.fx, 1.25); stage.fx.group.position.y = 0.33; stage.base.add(stage.fx.group);
+}
 function setPreview(id, skinOverride) {
   const prev = preview;
   if (prev) stage.scene.remove(prev.holder);
   const owned = Save.get().unlocked.includes(id);
   const a = buildAnimal(id, skinOverride || (owned ? Save.skinOf(id) : {}));
-  if (stage.water) stage.water.visible = id === 'zazavavindrano';           // la sirène se tient sur une flaque d'eau
+  applySurface(id);                                                         // chaque personnage a son propre sol (boue, étang, foin…)
   const holder = new THREE.Group(); holder.scale.setScalar(PREVIEW_SCALE[id] || 3.4); holder.add(a.group);
   stage.scene.add(holder);
   preview = { a, holder, id, hop: 0, hv: 0, spin: prev ? prev.spin : 0, spinV: 0, run: 0, anim: '', animT: 0, intro: false, x: prev ? prev.x : 2.7, targetX: 2.7 };
@@ -165,7 +187,7 @@ function show(name) {
   G.dirty = true;
   const is3d = VIEWS_3D.includes(name);
   document.body.dataset.view = is3d ? 'menu' : name === 'hud' ? 'play' : 'blur';
-  canvas.classList.toggle('blurred', name === 'levels' || name === 'settings' || name === 'win');
+  canvas.classList.toggle('blurred', name === 'levels' || name === 'settings' || name === 'win' || name === 'story');
   document.documentElement.style.setProperty('--mx', (name === 'chars' || name === 'shop' ? 24 : 73) + '%');
   if (preview) preview.holder.visible = is3d;
   if (name === 'menu') { refreshMenu(); animateTitle(); }
@@ -253,6 +275,56 @@ $('#ch-action').addEventListener('click', () => {
   else return;
   Save.save(); renderChars();
 });
+// ====================================================================== histoire du personnage
+const portraitCache = new Map();
+/** portrait du personnage (fond transparent) vu sous un angle donné, rendu dans une texture puis mis en cache */
+function portraitFor(id, skin, ry, size) {
+  const key = id + JSON.stringify(skin) + ry + size;
+  if (portraitCache.has(key)) return portraitCache.get(key);
+  let url = '';
+  try {
+    const rt = new THREE.WebGLRenderTarget(size, size); rt.texture.colorSpace = THREE.SRGBColorSpace;
+    const sc = new THREE.Scene();
+    sc.add(new THREE.HemisphereLight(0xfff1d6, 0x8a6a38, 1.6));
+    const dl = new THREE.DirectionalLight(0xffd9a0, 2.6); dl.position.set(-3, 5, 6); sc.add(dl);
+    const a = buildAnimal(id, skin); a.group.rotation.y = ry; a.group.scale.setScalar((PREVIEW_SCALE[id] || 3.4) / 3.4); sc.add(a.group);
+    const cm = new THREE.PerspectiveCamera(30, 1, 0.1, 50); cm.position.set(0.2, 0.85, 3.4); cm.lookAt(0, 0.6, 0);
+    const prev = renderer.getRenderTarget(), pc = renderer.getClearColor(new THREE.Color()), pa = renderer.getClearAlpha();
+    renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(sc, cm);
+    const buf = new Uint8Array(size * size * 4); renderer.readRenderTargetPixels(rt, 0, 0, size, size, buf);
+    renderer.setRenderTarget(prev); renderer.setClearColor(pc, pa);
+    const cv = document.createElement('canvas'); cv.width = cv.height = size;
+    const ctx = cv.getContext('2d'), img = ctx.createImageData(size, size);
+    for (let y = 0; y < size; y++) img.data.set(buf.subarray((size - 1 - y) * size * 4, (size - y) * size * 4), y * size * 4);
+    ctx.putImageData(img, 0, 0); url = cv.toDataURL('image/png');
+    rt.dispose();
+  } catch (e) { url = ''; }
+  portraitCache.set(key, url);
+  return url;
+}
+const lg = () => LANGS.indexOf(getLang());
+function renderStory() {
+  const c = CHARS[chIdx], S = STORIES[c.id], d = Save.get(), i = lg();
+  const skin = d.unlocked.includes(c.id) ? Save.skinOf(c.id) : {};
+  $('#st-wrap').dataset.k = S ? S.k : 'animal';
+  $('#st-name').textContent = cName(c); $('#st-real').textContent = cReal(c);
+  $('#st-count').textContent = (chIdx + 1) + ' / ' + CHARS.length;
+  $('#st-cat').textContent = S ? S.cat[i] : '';
+  $('#st-hist').textContent = S ? S.h[i] : cDesc(c);
+  $('#st-desc').textContent = S ? S.d[i] : cDesc(c);
+  $('#st-perk').textContent = (S ? S.p[i] : cAbility(c)) + (c.shield ? ` (${cAbility(c)} ×${c.shield})` : '');
+  $('#st-bar-speed').style.width = clamp(((c.speed - 6) / 2.4) * 100, 12, 100) + '%';
+  $('#st-bar-jump').style.width = clamp(((c.jump - 14) / 4) * 100, 12, 100) + '%';
+  $('#st-img1').src = portraitFor(c.id, skin, -0.95, 384);
+  $('#st-img2').src = portraitFor(c.id, skin, -1.55, 192);
+  $('#st-img3').src = portraitFor(c.id, skin, 0.1, 192);
+  const sc = $('.story-scroll'); if (sc) sc.scrollTop = 0;
+  const card = $('.story-card'); card.classList.remove('flip'); void card.offsetWidth; card.classList.add('flip');
+}
+$('#ch-story').addEventListener('click', () => { playSfx('click'); Sound.voice(CHARS[chIdx].id, 'win'); renderStory(); show('story'); });
+$('#st-back').addEventListener('click', () => { playSfx('click'); renderChars(); show('chars'); });
+$('#st-prev').addEventListener('click', () => { playSfx('click'); chIdx = (chIdx + CHARS.length - 1) % CHARS.length; renderStory(); });
+$('#st-next').addEventListener('click', () => { playSfx('click'); chIdx = (chIdx + 1) % CHARS.length; renderStory(); });
 $('#ch-shop').addEventListener('click', () => {
   const d = Save.get(); const c = CHARS[chIdx];
   if (d.unlocked.includes(c.id)) { d.char = c.id; Save.save(); }     // la boutique habille l'animal choisi
@@ -496,6 +568,9 @@ function startLevel(id) {
   G.pv = buildAnimal(ch.id, Save.skinOf(ch.id));
   G.world.scene.add(G.pv.group);
   G.ch = ch;
+  G.fx = null; lastInput = G.t; G.hangW = 0; G.hangPrev = false; G.liana = null;
+  if (HANG[ch.id]) { G.liana = makeLiana(); G.liana.visible = false; G.world.scene.add(G.liana); }
+  { const P = buildPedestal(ch.id); if (P.fx !== 'water') { G.fx = makeFx(P.fx, 0.55, P.disc ? tex(P.disc.tex) : null); G.world.scene.add(G.fx.group); } }
   G.deaths = 0; G.levelTime = 0; G.acc = 0; G.paused = false; G.mode = 'play'; G.winTimer = 0; G.deadTimer = 0; G.shake = 0; G.stepAcc = 0;
   G.sim = createSim(L, ch);
   G.cam.x = clamp(L.start.x + 2, 8, L.cols - 8); G.cam.y = 2.6;
@@ -700,7 +775,18 @@ function updatePlay(dt) {
   const target = P.face > 0 ? -0.35 : -Math.PI + 0.35;
   G.ang += (target - G.ang) * (1 - Math.exp(-14 * dt));
   pv.group.rotation.y = G.ang;
-  animateAnimal(pv, G.ch.id, { vx: P.vx, on: P.on, vy: P.vy, t: G.t, run: P.run });
+  if (S.state !== 'play' || Math.abs(P.vx) > 0.2 || !P.on || input.left || input.right || input.jump) lastInput = G.t;
+  // les personnages qui s'accrochent (Maki, Aye-Aye, Ikotofetsy, Tanalahy) attrapent une liane / branche pendant le saut ; elle disparaît à l'atterrissage (effet visuel)
+  const hk = HANG[G.ch.id];
+  const hangNow = !!hk && S.state === 'play' && !P.on && Math.abs(P.vx) > 0.8;
+  if (hangNow && !G.hangPrev) { G.hangAx = P.x + P.face * 0.5; G.hangAy = P.y + 2.7; }
+  G.hangPrev = hangNow; G.hangW = (G.hangW || 0) + ((hangNow ? 1 : 0) - (G.hangW || 0)) * (1 - Math.exp(-14 * dt));
+  pv.group.rotation.z = 0;
+  animateAnimal(pv, G.ch.id, { vx: P.vx, on: P.on, vy: P.vy, t: G.t, run: P.run, dt, idleFor: G.t - lastInput, reset: true });
+  if (G.liana) {
+    G.liana.visible = G.hangW > 0.04;
+    if (G.liana.visible) { const hp = handPoint(pv, hk); placeLiana(G.liana, G.hangAx, Math.max(G.hangAy, hp.y + 1.0), hp.x, hp.y, clamp(G.hangW * 2, 0, 1)); }
+  }
   if (S.state === 'play' && P.on && Math.abs(P.vx) > 2) { G.stepAcc += Math.abs(P.vx) * dt; if (G.stepAcc > 1.2) { G.stepAcc = 0; Sound.stepSound(G.ch.id); } }
   if (S.state === 'play') pv.group.visible = !(P.inv > 0 && Math.floor(G.t * 18) % 2 === 0);
   // blob d'ombre
@@ -718,6 +804,10 @@ function updatePlay(dt) {
     G.world.ripple.position.set(P.x, gy + 0.04, 0); G.world.ripple.scale.set(sc, sc, 1);
     G.world.puddle.position.set(P.x, gy + 0.035, 0); G.world.puddle.scale.setScalar(P.on ? 1 : 0.8);
   }
+  if (G.fx) {                                                      // animation sous les pieds : boue, poussière, feuilles… selon le personnage
+    G.fx.group.visible = blob.visible; G.fx.group.position.set(P.x, gy + 0.04, 0); G.fx.group.scale.setScalar(P.on ? 1 : 0.8);
+    G.fx.update(G.t, Math.max(Math.min(1, Math.abs(P.vx) / 6), pv.idle ? pv.idle.fxb : 0), P.on);
+  }
   G.world.update(S, G.t, dt, P.x, P.y);
   // caméra
   const L = G.L;
@@ -729,6 +819,7 @@ function updatePlay(dt) {
   const ty = Math.max(P.y + 0.6, 2.6);
   G.cam.x += (tx - G.cam.x) * (1 - Math.exp(-5 * dt));
   G.cam.y += (ty - G.cam.y) * (1 - Math.exp(-3.2 * dt));
+  if (pv.idle && pv.idle.shake > 0.3) G.shake = Math.max(G.shake, 0.18);                  // Rapeto tape du pied : le sol tremble
   G.shake = Math.max(0, G.shake - dt);
   const sh = G.shake * 0.6;
   cam.position.set(G.cam.x + (Math.random() - 0.5) * sh, G.cam.y + 2.9 + (Math.random() - 0.5) * sh, dist);
@@ -767,14 +858,21 @@ function updateMenu(dt) {
   stage.base.position.x = p.targetX; stage.base.visible = g.visible;      // le socle en bois ne bouge pas : seul l'animal s'anime
   const idleSway = (p.intro || vx > 0) ? 0 : Math.sin(G.t * 0.6) * 0.18;
   g.rotation.y = (p.intro || p.anim === 'run' ? -0.2 : -0.55) + p.spin + idleSway;
-  animateAnimal(p.a, p.id, { vx, on: p.hop === 0, vy: p.hv, t: G.t, run: p.run });
+  if (vx > 0 || p.intro || p.animT > 0 || dragging || p.hop > 0) lastInput = G.t;
+  animateAnimal(p.a, p.id, { vx, on: p.hop === 0, vy: p.hv, t: G.t, run: p.run, dt, idleFor: G.t - lastInput, reset: false });
+  const idl = p.a.idle;
+  if (stage.fx) stage.fx.update(G.t, Math.max(Math.min(1, vx / 6), idl ? idl.fxb : 0), true);
+  if (stage.flames) for (const f of stage.flames) f.scale.set(1, 1 + 0.3 * Math.sin(G.t * 11 + f.userData.flame * 2), 1);
+  if (stage.discTex === 'water') { const sm = stage.water.material.map; sm.offset.x = G.t * 0.03; sm.offset.y = Math.sin(G.t * 0.6) * 0.02; }
+  if (stage.waterMesh) { const sm = stage.waterMesh.material.map; sm.offset.x = G.t * 0.03; sm.offset.y = Math.sin(G.t * 0.6) * 0.02; }
   if (ICON) {                                   // mode « icône » : plan serré sur l'animal (outil de génération d'icônes)
     p.targetX = p.x = 0; g.rotation.y = -0.62; stage.base.visible = false;
     const far = new URLSearchParams(location.search).has('far');
     cam.position.set(0.3, far ? 2.2 : 1.8, far ? 12.5 : 7.8); cam.lookAt(0, far ? 1.35 : 1.45, 0);
     return;
   }
-  cam.position.set(0, 2.2, 10.2 * Math.max(1, 1.9 / asp));
+  const shk = idl && idl.shake > 0.3 ? 0.05 : 0;                          // le sol tremble (Rapeto)
+  cam.position.set((Math.random() - 0.5) * shk, 2.2 + (Math.random() - 0.5) * shk, 10.2 * Math.max(1, 1.9 / asp));
   cam.lookAt(0, 1.45, 0);
 }
 function frame(now) {

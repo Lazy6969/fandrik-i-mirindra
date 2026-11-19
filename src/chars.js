@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { idleAnim } from './idle.js';
 import { BUILDERS } from './chars2.js';
 
 // ------------------------------------------------------------------ fiches personnages
@@ -148,8 +149,9 @@ export function eyes(head, x, y, z, r, iris = 0x1a1208, white = 0xffffff, glint 
   for (const s of [1, -1]) {
     const w = ell(r * 2, r * 2, r * 1.6, mat(white, { roughness: 0.3 }), x, y, z * s);
     const p = ell(r * 1.35, r * 1.5, r * 1.1, mat(iris, { roughness: 0.2 }), x + r * 0.45, y, z * s * 1.06);
+    w.userData.eye = 'white'; p.userData.eye = 'iris';
     head.add(w, p);
-    if (glint) head.add(ell(r * 0.5, r * 0.5, r * 0.5, mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.4 }), x + r * 0.85, y + r * 0.3, z * s * 1.1));
+    if (glint) { const gl = ell(r * 0.5, r * 0.5, r * 0.5, mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.4 }), x + r * 0.85, y + r * 0.3, z * s * 1.1); gl.userData.eye = 'glint'; head.add(gl); }
   }
 }
 
@@ -678,4 +680,6 @@ export function animateAnimal(a, id, st) {
   if (rig.head) rig.head.rotation.z = air ? THREE.MathUtils.clamp(st.vy * 0.012, -0.25, 0.25) : Math.sin(st.t * 1.7) * 0.03;
   const stretch = air ? THREE.MathUtils.clamp(1 + Math.abs(st.vy) * 0.008, 1, 1.12) : 1;
   group.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch));
+  idleAnim(a, id, st);
 }
+
