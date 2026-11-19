@@ -9,11 +9,11 @@ android {
     namespace "mg.mirindra.game"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "mg.mirindra.game"
+        applicationId "mg.mirindra.fandrik"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.1"
+        versionCode 3
+        versionName "1.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
