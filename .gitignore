@@ -17,3 +17,8 @@ pp_*/
 *.out
 sync.log
 npm-debug.log*
+
+android/keystore.properties
+android/*.keystore
+android/*.jks
+*.keystore

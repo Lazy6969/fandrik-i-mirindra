@@ -31,10 +31,10 @@ npx cap sync android
 
 # 4) APK
 Push-Location android
-.\gradlew.bat assembleDebug
+.\gradlew.bat assembleRelease
 Pop-Location
 
-$apk = 'android\app\build\outputs\apk\debug\app-debug.apk'
+$apk = 'android\app\build\outputs\apk\release\app-release.apk'
 if (Test-Path $apk) {
   Copy-Item $apk 'Mirindra.apk' -Force
   Write-Host "APK pret : $PWD\Mirindra.apk" -ForegroundColor Green

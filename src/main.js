@@ -35,7 +35,7 @@ const canvas = $('#gl');
 let renderer;
 try {
   const mobileGpu = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints || 0) > 1;
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobileGpu, powerPreference: 'high-performance' });   // pas d'anti-crénelage sur téléphone : gros gain de fluidité
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobileGpu, alpha: false, stencil: false, precision: mobileGpu ? 'mediump' : 'highp', powerPreference: 'high-performance' });   // pas d'anti-crénelage sur téléphone : gros gain de fluidité
 } catch (e) {
   $('#loading').innerHTML = '<p style="padding:24px;text-align:center">WebGL indisponible sur cet appareil.</p>';
   throw e;

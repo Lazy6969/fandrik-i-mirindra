@@ -1,5 +1,10 @@
 apply plugin: 'com.android.application'
 
+// Signature de l'APK : clé personnelle dans android/keystore.properties (non versionnée)
+def ksProps = new Properties()
+def ksFile = rootProject.file('keystore.properties')
+if (ksFile.exists()) ksProps.load(new FileInputStream(ksFile))
+
 android {
     namespace "mg.mirindra.game"
     compileSdk rootProject.ext.compileSdkVersion
@@ -16,8 +21,24 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (ksFile.exists()) {
+                storeFile rootProject.file(ksProps['storeFile'])
+                storePassword ksProps['storePassword']
+                keyAlias ksProps['keyAlias']
+                keyPassword ksProps['keyPassword']
+            }
+        }
+    }
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
     buildTypes {
         release {
+            signingConfig ksFile.exists() ? signingConfigs.release : signingConfigs.debug
+            debuggable false
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

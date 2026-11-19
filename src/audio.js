@@ -41,7 +41,9 @@ function tone(freq, dur, type = 'sine', vol = 0.4, slide = 0, when = 0, dest = n
   o.type = type;
   o.frequency.setValueAtTime(freq, t);
   if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t + dur);
-  g.gain.setValueAtTime(vol, t);
+  const atk = dest === musicGain ? 0.06 : Math.min(0.012, dur * 0.2);          // attaque douce : plus de « clic » au début des notes
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol, t + atk);
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(g); g.connect(dest || sfxGain || master);
   o.start(t); o.stop(t + dur + 0.02);
@@ -157,3 +159,9 @@ export function stepSound(id) {
 export function vibrate(ms) {
   try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* non supporté */ }
 }
+
+// l'appli passe en arrière-plan (écran verrouillé, autre appli) : on coupe le son, ça économise la batterie et la mémoire
+document.addEventListener('visibilitychange', () => {
+  if (!ctx) return;
+  if (document.hidden) ctx.suspend(); else if (opts.sound || opts.music) ctx.resume();
+});
