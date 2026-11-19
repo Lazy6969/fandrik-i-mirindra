@@ -64,31 +64,37 @@ function baseQuality() {
 function applyQuality() {
   const q = qualityLevel();
   const dpr = window.devicePixelRatio || 1;
-  renderer.setPixelRatio(q === 'low' ? Math.min(dpr, 0.85) : Math.min(dpr, q === 'mid' ? 1 : IS_MOBILE ? 1.5 : 1.75));   // les écrans 3x ruineraient la fluidité
+  const base = q === 'low' ? Math.min(dpr, 0.85) : Math.min(dpr, q === 'mid' ? 1 : IS_MOBILE ? 1.25 : 1.75);   // les écrans 3x ruineraient la fluidité
+  renderer.setPixelRatio(Math.max(0.5, base * DSTEPS[dStep]));               // résolution dynamique : baisse par paliers si l'appareil saccade
+  G.noDof = dStep >= 2;                                                       // palier 2+ : plus de flou de profondeur (le plus gourmand)
   renderer.shadowMap.enabled = q === 'high';
   document.body.classList.toggle('lowfx', q !== 'high' || IS_MOBILE);       // téléphone : jamais de flou CSS par-dessus le jeu (le flou de profondeur 3D suffit)
   renderer.shadowMap.autoUpdate = q === 'high';   // sinon : ombres recalculées une image sur deux (voir la boucle)
   G.quality = q; G.dirty = true;
-  if (comp) comp.c.setPixelRatio(renderer.getPixelRatio());
+  if (comp) comp.c.setPixelRatio(composerRatio());
   resize();
 }
 
 const cam = new THREE.PerspectiveCamera(42, 2, 0.1, 400);
 let splash = null;   // scène de la page d'ouverture (null une fois le jeu lancé)
 let comp = null;   // flou de profondeur (qualité « Avo ») : le fond lointain est très flou, le terrain de jeu reste net
+// mémoire : sur téléphone les images intermédiaires du flou de profondeur sont rendues en résolution écran (jamais au-delà), et moins encore si l'appareil a peu de RAM
+const composerRatio = () => (IS_MOBILE ? Math.min(renderer.getPixelRatio(), (navigator.deviceMemory || 4) <= 3 ? 0.8 : 1) : renderer.getPixelRatio());
+const DSTEPS = [1, 0.85, 0.7, 0.55];
+let dStep = 0; try { dStep = Math.min(3, Math.max(0, Number(localStorage.getItem('mirindra.dstep')) || 0)); } catch (e) { /* pas de stockage */ }
 function getComposer() {
   if (!comp) {
     const c = new EffectComposer(renderer);
     const rp = new RenderPass(new THREE.Scene(), cam);
     const bp = new BokehPass(rp.scene, cam, { focus: 10, aperture: 0.0005, maxblur: 0.008 });
     c.addPass(rp); c.addPass(bp); c.addPass(new OutputPass());
-    c.setPixelRatio(renderer.getPixelRatio()); c.setSize(window.innerWidth, window.innerHeight);
+    c.setPixelRatio(composerRatio()); c.setSize(window.innerWidth, window.innerHeight);
     comp = { c, rp, bp };
   }
   return comp;
 }
 function drawScene(scene, focus) {
-  if (G.quality === 'high') {
+  if (G.quality === 'high' && !G.noDof) {
     try { const k = getComposer(); k.rp.scene = scene; k.bp.scene = scene; k.bp.uniforms.focus.value = focus; k.c.render(); return; } catch (e) { G.quality = 'mid'; }
   }
   renderer.render(scene, cam);
@@ -886,7 +892,14 @@ function updateMenu(dt) {
   cam.lookAt(0, 1.45, 0);
 }
 // ---- réglage automatique : si le jeu saccade (moins de ~38 images/s) pendant 2 s, il baisse tout seul la qualité (et s'en souvient)
-let govN = 0, govSlow = 0, govFrom = 0;
+let govN = 0, govSlow = 0, govFrom = 0, govGood = 0, govCool = 0;
+function stepDown() {
+  if (dStep < 3) { dStep++; try { localStorage.setItem('mirindra.dstep', String(dStep)); } catch (e) { /* pas de stockage */ } applyQuality(); return; }
+  downgradeQuality();
+}
+function stepUp() {
+  if (dStep > 0) { dStep--; try { localStorage.setItem('mirindra.dstep', String(dStep)); } catch (e) { /* pas de stockage */ } applyQuality(); }
+}
 function downgradeQuality() {
   const cur = G.quality; if (cur === 'low') return;
   qcap = cur === 'high' ? 'mid' : 'low';
@@ -897,10 +910,17 @@ function downgradeQuality() {
 function frame(now) {
   requestAnimationFrame(frame);
   if (G.quality === 'low' && now - last < 30) return;                          // 30 images/s max en mode éco (batterie, chauffe)
+  if (document.hidden) { last = now; return; }                                // appli en arrière-plan : on ne dessine rien (batterie, chauffe, mémoire)
   const raw = now - last;
   const dt = Math.max(0, Math.min(0.05, raw / 1000)); last = now;   // jamais négatif (1re image)
   if ((G.mode === 'play' && !G.paused) || (G.mode === 'menu' && VIEWS_3D.includes(G.screen))) {
-    if (G.t > govFrom && raw > 0 && !document.hidden) { govN++; if (raw > 26 && raw < 400) govSlow++; if (govN >= 120) { if (govSlow > 54 && G.quality !== 'low') downgradeQuality(); govN = govSlow = 0; } }
+    if (G.t > govFrom && raw > 0 && !document.hidden) { govN++; if (raw > 26 && raw < 400) govSlow++; if (govN >= 90) {
+        if (govCool > 0) govCool--;
+        if (govSlow > 36) { govGood = 0; if (govCool === 0 && !(G.quality === 'low' && dStep >= 3)) { stepDown(); govCool = 2; } }   // trop lent : on baisse d'un cran
+        else if (govSlow < 3) { govGood++; if (govGood >= 4 && govCool === 0) { stepUp(); govGood = 0; govCool = 3; } }   // très fluide pendant longtemps : on remonte d'un cran
+        else govGood = 0;
+        govN = govSlow = 0;
+      } }
   } else { govN = govSlow = 0; govFrom = G.t + 3; }
   G.t += dt; G.frame++;
   if (G.mode === 'splash' && splash) {                                    // page d'ouverture : on charge un peu, on anime, on dessine

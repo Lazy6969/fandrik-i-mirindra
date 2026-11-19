@@ -214,7 +214,7 @@ export function buildWorld(def, L, worldId, quality = 'high') {
   const hemi = new THREE.HemisphereLight(th.hemi[0], th.hemi[1], th.hemi[2]); scene.add(hemi);
   const sun = new THREE.DirectionalLight(th.sun[0], th.sun[1]);
   sun.castShadow = quality === 'high';
-  const smap = quality === 'high' ? 1024 : 512; sun.shadow.mapSize.set(smap, smap);
+  const smap = quality === 'high' && !IS_MOBILE ? 1024 : 512;               // 4x moins de mémoire pour les ombres sur téléphone sun.shadow.mapSize.set(smap, smap);
   const sc = sun.shadow.camera; sc.left = -16; sc.right = 16; sc.top = 12; sc.bottom = -12; sc.near = 1; sc.far = 70;
   sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
