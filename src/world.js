@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mat, toon, ell, cone, cyl, box, buildCrab, toonGradient } from './chars.js';
 import { buildTrees, buildGrass, buildClouds, buildBirds, buildGroundCover, wind } from './decor.js';
+import { IS_MOBILE } from './device.js';
 import { soilFronts, vHash, buildWorms } from './soil.js';
 import { buildLandmark, buildRing, buildMeadowArea, buildFrontFringe } from './landmarks.js';
 
@@ -266,7 +267,7 @@ export function buildWorld(def, L, worldId, quality = 'high') {
   }
   const clouds = buildClouds(R, Math.ceil(span / (quality === 'low' ? 45 : 28)), -20, span + 20, th.cloud); clouds.userData.drift = 0.35; deco.add(clouds);
   // herbe dense au pied des arbres et sur les rives, oiseaux, soleil rayonnant
-  const cover = buildGroundCover(worldId, R, spots, L.cols, quality === 'low' ? 28 : quality === 'mid' ? 50 : 110, quality === 'low' ? 3 : quality === 'mid' ? 5 : 11); scene.add(cover);
+  const cover = buildGroundCover(worldId, R, spots, L.cols, quality === 'low' ? 28 : quality === 'mid' ? 50 : IS_MOBILE ? 70 : 110, quality === 'low' ? 3 : quality === 'mid' ? 5 : IS_MOBILE ? 7 : 11); scene.add(cover);
   // fond emblématique lié au titre du niveau (ex. Rova Manjakamiadana pour Antananarivo)
   const landmark = def.landmark ? buildLandmark(def.landmark, R, 0.5) : null;
   if (landmark) { landmark.position.set(L.cols / 2, -1.5, -48); scene.add(landmark); }
@@ -274,7 +275,7 @@ export function buildWorld(def, L, worldId, quality = 'high') {
   const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex('255,214,150'), transparent: true, opacity: 0.85, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })); sunGlow.scale.set(85, 85, 1); scene.add(sunGlow);
   // herbe animée sur le dessus des blocs
   const grassCells = exByV.flat().filter(([c, y]) => !L.ents.some((e) => e.kind === 'spike' && Math.floor(e.x) === c && e.y === y + 1));
-  const grassPer = quality === 'low' ? 14 : quality === 'mid' ? 32 : 90;
+  const grassPer = quality === 'low' ? 14 : quality === 'mid' ? 32 : IS_MOBILE ? 50 : 90;
   const grass = buildGrass(grassCells, worldId, R, DEPTH, grassPer); scene.add(grass.mesh);
   // particules ambiantes (pollen / poussière / lucioles)
   const N = 90, pos = new Float32Array(N * 3), vel = [];
@@ -517,7 +518,7 @@ export function buildStage(themeKey = 'forest', quality = 'high') {
   sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.04;
   scene.add(sun, sun.target);
   const R = rng(5);
-  const q = quality === 'low' ? 0 : quality === 'mid' ? 1 : 2;
+  const q = quality === 'low' ? 0 : quality === 'mid' || IS_MOBILE ? 1 : 2;
   const mats = blockMaterials(th, themeKey);
   const base = new THREE.Group(); base.position.y = -0.3; scene.add(base);          // socle : groupe (la forme change selon le personnage)
   const shape0 = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.1, 0.6, 28), mats.exposed); shape0.receiveShadow = true; shape0.castShadow = true; base.add(shape0);

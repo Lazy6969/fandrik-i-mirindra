@@ -12,6 +12,7 @@ import { ic, hydrateIcons } from './icons.js';
 import { createSplash, hasSplashImage } from './splash.js';
 import { makeFx } from './surface.js';
 import { STORIES } from './stories.js';
+import { IS_MOBILE } from './device.js';
 import { makeLiana, placeLiana, handPoint, HANG } from './idle.js';
 import { buildPedestal, tex } from './pedestal.js';
 import { buildSplashScene } from './splash-scene.js';
@@ -34,8 +35,8 @@ Sound.setOptions({ sound: settings().sound, music: settings().music, volSfx: set
 const canvas = $('#gl');
 let renderer;
 try {
-  const mobileGpu = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints || 0) > 1;
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobileGpu, alpha: false, stencil: false, precision: mobileGpu ? 'mediump' : 'highp', powerPreference: 'high-performance' });   // pas d'anti-crénelage sur téléphone : gros gain de fluidité
+  // précision « highp » obligatoire : en « mediump » la profondeur est imprécise et le flou de profondeur (qualité Avo) rendait TOUT l'écran flou
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_MOBILE, alpha: false, stencil: false, precision: 'highp', powerPreference: 'high-performance' });   // pas d'anti-crénelage sur téléphone : gros gain de fluidité
 } catch (e) {
   $('#loading').innerHTML = '<p style="padding:24px;text-align:center">WebGL indisponible sur cet appareil.</p>';
   throw e;
@@ -63,9 +64,9 @@ function baseQuality() {
 function applyQuality() {
   const q = qualityLevel();
   const dpr = window.devicePixelRatio || 1;
-  renderer.setPixelRatio(q === 'low' ? Math.min(dpr, 0.85) : Math.min(dpr, q === 'mid' ? 1 : 1.75));   // les écrans 3x ruineraient la fluidité
+  renderer.setPixelRatio(q === 'low' ? Math.min(dpr, 0.85) : Math.min(dpr, q === 'mid' ? 1 : IS_MOBILE ? 1.5 : 1.75));   // les écrans 3x ruineraient la fluidité
   renderer.shadowMap.enabled = q === 'high';
-  document.body.classList.toggle('lowfx', q !== 'high');
+  document.body.classList.toggle('lowfx', q !== 'high' || IS_MOBILE);       // téléphone : jamais de flou CSS par-dessus le jeu (le flou de profondeur 3D suffit)
   renderer.shadowMap.autoUpdate = q === 'high';   // sinon : ombres recalculées une image sur deux (voir la boucle)
   G.quality = q; G.dirty = true;
   if (comp) comp.c.setPixelRatio(renderer.getPixelRatio());
