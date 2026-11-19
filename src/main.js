@@ -36,7 +36,7 @@ const canvas = $('#gl');
 let renderer;
 try {
   // précision « highp » obligatoire : en « mediump » la profondeur est imprécise et le flou de profondeur (qualité Avo) rendait TOUT l'écran flou
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_MOBILE, alpha: false, stencil: false, precision: 'highp', powerPreference: 'high-performance' });   // pas d'anti-crénelage sur téléphone : gros gain de fluidité
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: (navigator.deviceMemory || 4) > 2, alpha: false, stencil: false, precision: 'highp', powerPreference: 'high-performance' });   // pas d'anti-crénelage sur téléphone : gros gain de fluidité
 } catch (e) {
   $('#loading').innerHTML = '<p style="padding:24px;text-align:center">WebGL indisponible sur cet appareil.</p>';
   throw e;
@@ -59,12 +59,13 @@ function baseQuality() {
   const mobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints || 0) > 1;
   const weak = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 4) <= 3;
   if (mobile && weak) return 'low';
+  if (mobile && !weak && (navigator.deviceMemory || 4) >= 6 && (navigator.hardwareConcurrency || 4) >= 8) return 'high';
   return mobile || weak ? 'mid' : 'high';      // téléphone : jamais « haute » par défaut (fluidité)
 }
 function applyQuality() {
   const q = qualityLevel();
   const dpr = window.devicePixelRatio || 1;
-  const base = q === 'low' ? Math.min(dpr, 0.85) : Math.min(dpr, q === 'mid' ? 1 : IS_MOBILE ? 1.25 : 1.75);   // les écrans 3x ruineraient la fluidité
+  const base = q === 'low' ? Math.min(dpr, 1.25) : Math.min(dpr, q === 'mid' ? 1.75 : 2);   // image nette ; la résolution dynamique (DSTEPS) la baisse seule si l'appareil saccade
   renderer.setPixelRatio(Math.max(0.5, base * DSTEPS[dStep]));               // résolution dynamique : baisse par paliers si l'appareil saccade
   G.noDof = dStep >= 2;                                                       // palier 2+ : plus de flou de profondeur (le plus gourmand)
   renderer.shadowMap.enabled = q === 'high';
@@ -79,7 +80,7 @@ const cam = new THREE.PerspectiveCamera(42, 2, 0.1, 400);
 let splash = null;   // scène de la page d'ouverture (null une fois le jeu lancé)
 let comp = null;   // flou de profondeur (qualité « Avo ») : le fond lointain est très flou, le terrain de jeu reste net
 // mémoire : sur téléphone les images intermédiaires du flou de profondeur sont rendues en résolution écran (jamais au-delà), et moins encore si l'appareil a peu de RAM
-const composerRatio = () => (IS_MOBILE ? Math.min(renderer.getPixelRatio(), (navigator.deviceMemory || 4) <= 3 ? 0.8 : 1) : renderer.getPixelRatio());
+const composerRatio = () => Math.min(renderer.getPixelRatio(), (navigator.deviceMemory || 4) <= 3 ? 1.5 : 2);   // le flou de profondeur est rendu à la même netteté que l'écran
 const DSTEPS = [1, 0.85, 0.7, 0.55];
 let dStep = 0; try { dStep = Math.min(3, Math.max(0, Number(localStorage.getItem('mirindra.dstep')) || 0)); } catch (e) { /* pas de stockage */ }
 function getComposer() {
